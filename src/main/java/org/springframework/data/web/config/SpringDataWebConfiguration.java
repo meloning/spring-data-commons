@@ -17,6 +17,7 @@ package org.springframework.data.web.config;
 
 import java.util.List;
 
+import kotlinx.serialization.json.Json;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -28,14 +29,11 @@ import org.springframework.data.geo.format.DistanceFormatter;
 import org.springframework.data.geo.format.PointFormatter;
 import org.springframework.data.repository.support.DomainClassConverter;
 import org.springframework.data.util.Lazy;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
-import org.springframework.data.web.ProjectingJackson2HttpMessageConverter;
-import org.springframework.data.web.ProxyingHandlerMethodArgumentResolver;
-import org.springframework.data.web.SortHandlerMethodArgumentResolver;
-import org.springframework.data.web.XmlBeamHttpMessageConverter;
+import org.springframework.data.web.*;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.format.support.FormattingConversionService;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.KotlinSerializationJsonHttpMessageConverter;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -137,6 +135,14 @@ public class SpringDataWebConfiguration implements WebMvcConfigurer, BeanClassLo
 
 	@Override
 	public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+		if (ClassUtils.isPresent("kotlinx.serialization.json.Json", context.getClassLoader())) {
+			int defaultConverterIndex = converters.indexOf(new KotlinSerializationJsonHttpMessageConverter());
+			KotlinSerializationJsonHttpMessageConverter defaultConverter =
+					(defaultConverterIndex == -1) ? new KotlinSerializationJsonHttpMessageConverter() :
+			(KotlinSerializationJsonHttpMessageConverter) converters.get(defaultConverterIndex);
+
+			converters.add((defaultConverterIndex == -1) ? 0 : defaultConverterIndex, new KotlinSerializationPageAndSliceHttpMessageConverter(Json.Default, defaultConverter));
+		}
 
 		if (ClassUtils.isPresent("com.jayway.jsonpath.DocumentContext", context.getClassLoader())
 				&& ClassUtils.isPresent("com.fasterxml.jackson.databind.ObjectMapper", context.getClassLoader())) {

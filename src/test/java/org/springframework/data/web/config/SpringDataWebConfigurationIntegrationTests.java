@@ -22,12 +22,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
+import kotlinx.serialization.json.Json;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.classloadersupport.HidingClassLoader;
+import org.springframework.data.web.KotlinSerializationPageAndSliceHttpMessageConverter;
 import org.springframework.data.web.ProjectingJackson2HttpMessageConverter;
 import org.springframework.data.web.XmlBeamHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -46,6 +48,16 @@ import com.jayway.jsonpath.DocumentContext;
  * @author Oliver Gierke
  */
 class SpringDataWebConfigurationIntegrationTests {
+
+	@Test
+	void shouldNotLoadKotlinSerializationPageAndSliceConverterWhenKotlinSerializationNotPresent() {
+		List<HttpMessageConverter<?>> converters = new ArrayList<HttpMessageConverter<?>>();
+
+		createConfigWithClassLoader(HidingClassLoader.hide(Json.class), it -> it.extendMessageConverters(converters));
+
+		assertThat(converters).areNot(instanceWithClassName(KotlinSerializationPageAndSliceHttpMessageConverter.class));
+
+	}
 
 	@Test // DATACMNS-987
 	void shouldNotLoadJacksonConverterWhenJacksonNotPresent() {
@@ -89,6 +101,7 @@ class SpringDataWebConfigurationIntegrationTests {
 
 		assertThat(converters).haveAtLeastOne(instanceWithClassName(XmlBeamHttpMessageConverter.class));
 		assertThat(converters).haveAtLeastOne(instanceWithClassName(ProjectingJackson2HttpMessageConverter.class));
+		assertThat(converters).haveAtLeastOne(instanceWithClassName(KotlinSerializationPageAndSliceHttpMessageConverter.class));
 	}
 
 	@Test // DATACMNS-1152
