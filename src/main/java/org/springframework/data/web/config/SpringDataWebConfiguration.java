@@ -32,6 +32,7 @@ import org.springframework.data.util.Lazy;
 import org.springframework.data.web.*;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.format.support.FormattingConversionService;
+import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.KotlinSerializationJsonHttpMessageConverter;
 import org.springframework.lang.Nullable;
@@ -137,11 +138,12 @@ public class SpringDataWebConfiguration implements WebMvcConfigurer, BeanClassLo
 	public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
 		if (ClassUtils.isPresent("kotlinx.serialization.json.Json", context.getClassLoader())) {
 			int defaultConverterIndex = converters.indexOf(new KotlinSerializationJsonHttpMessageConverter());
-			KotlinSerializationJsonHttpMessageConverter defaultConverter =
-					(defaultConverterIndex == -1) ? new KotlinSerializationJsonHttpMessageConverter() :
-			(KotlinSerializationJsonHttpMessageConverter) converters.get(defaultConverterIndex);
 
-			converters.add((defaultConverterIndex == -1) ? 0 : defaultConverterIndex, new KotlinSerializationPageAndSliceHttpMessageConverter(Json.Default, defaultConverter));
+			converters.add(
+				(defaultConverterIndex == -1) ? 0 : defaultConverterIndex,
+				new KotlinSerializationPageAndSliceHttpMessageConverter(
+					MediaType.APPLICATION_JSON, new MediaType("application", "*+json"))
+			);
 		}
 
 		if (ClassUtils.isPresent("com.jayway.jsonpath.DocumentContext", context.getClassLoader())
